@@ -4,8 +4,8 @@ from ThreadTool import ThreadTool
 import datetime
 
 class TaskTool:
-	def __init__(self,runtype=1,deamon=False,needfinishqueue=0,log=None):
-		self.threadtool=ThreadTool(runtype,deamon=deamon,needfinishqueue=needfinishqueue)
+	def __init__(self,isThread=1,deamon=False,needfinishqueue=0,log=None):
+		self.threadtool=ThreadTool(isThread,deamon=deamon,needfinishqueue=needfinishqueue)
 		self.threadtool.add_task(self.task)
 		self.log=log
 		self.threadtool.set_Thread_size(1)
@@ -41,7 +41,10 @@ class TaskTool:
 		return self.threadtool.get_running_size()
 if __name__=='__main__':
 	import time
-	t=TaskTool(2)
+	t=TaskTool(0)
 	t.add_work([1,2,3,4,5])
+	print 11111111
+	time.sleep(6)
 	t.add_work([6,7,8,9,10])
+	time.sleep(7)
 	t.add_work([16, 17, 18, 19, 110])

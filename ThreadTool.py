@@ -39,9 +39,9 @@ class ThreadTool:
 				self.q_finish = Queue() #完成队列
 		elif self.isThread==0 :
 			self.lock = multiprocessing.Lock()  
-			self.q_request=multiprocessing.Queue()
+			self.q_request=multiprocessing.JoinableQueue()
 			if self.needfinishqueue>0:
-				self.q_finish=multiprocessing.Queue()
+				self.q_finish=multiprocessing.JoinableQueue()
 		else:
 
 			from gevent.queue import JoinableQueue as geventqueue
@@ -59,7 +59,7 @@ class ThreadTool:
 
 	def __del__(self): #解构时需等待两个队列完成
 		time.sleep(0.5)
-		if self.isThread==1 or self.isThread==2:
+		if self.isThread==1 or self.isThread==2 or self.isThread==0:
 
 			self.q_request.join()
 			if self.needfinishqueue>0:
@@ -151,7 +151,7 @@ class ThreadTool:
 				threadnownum=self.threads_num
 		elif self.isThread==0:
 			tempnumb=0
-			time.sleep(1)
+			# time.sleep(1)
 			with self.lock:
 				if len(self.Threads) == 0:
 					threadnownum = 0
@@ -241,6 +241,7 @@ class ThreadTool:
 			threadname=multiprocessing.current_process().name
 
 			print '进程'+threadname+'完成请求'
+			self.q_request.task_done()
 
 
 
