@@ -17,7 +17,9 @@ import multiprocessing
 
 once=None
 
-
+# from multiprocessing.dummy import DummyProcess as Thread
+# from multiprocessing.dummy import JoinableQueue as Queue
+# from multiprocessing import dummy as threading
 stack_size(32768*16)
 class ThreadTool:
 	def __init__(self,isThread=1,needfinishqueue=0,deamon=False):
@@ -38,7 +40,7 @@ class ThreadTool:
 			if needfinishqueue>0:
 				self.q_finish = Queue() #完成队列
 		elif self.isThread==0 :
-			self.lock = multiprocessing.Lock()  
+			self.lock = multiprocessing.Lock()
 			self.q_request=multiprocessing.JoinableQueue()
 			if self.needfinishqueue>0:
 				self.q_finish=multiprocessing.JoinableQueue()
@@ -56,7 +58,10 @@ class ThreadTool:
 			self.q_request = geventqueue()
 			if self.needfinishqueue > 0:
 				self.q_finish = geventqueue()
+	def join(self):
 
+		for i in self.Threads:
+			i.join()
 	def __del__(self): #解构时需等待两个队列完成
 		time.sleep(0.5)
 		if self.isThread==1 or self.isThread==2 or self.isThread==0:
@@ -102,7 +107,7 @@ class ThreadTool:
 				t = multiprocessing.Process(target=self.getTaskProcess)
 				print '进程'+str(i+1)+'  正在启动'
 				t.Daemon=self.deamon
-				t.start()	
+				t.start()
 				self.Threads.append(t)
 				with self.lock:	
 					self.alivenum+=1
@@ -138,9 +143,7 @@ class ThreadTool:
 				for item in self.Threads:
 
 					if item.isAlive():
-
-
-						threadnownum=threadnownum+1
+						threadnownum += 1
 
 
 				with self.lock:	
@@ -151,11 +154,13 @@ class ThreadTool:
 				threadnownum=self.threads_num
 		elif self.isThread==0:
 			tempnumb=0
+			threadnownum=0
 			# time.sleep(1)
 			with self.lock:
 				if len(self.Threads) == 0:
 					threadnownum = 0
 				else:
+					print str(len(self.Threads)) + '活着的进程数'
 					self.Threads = filter(lambda x: x.is_alive() != False, self.Threads)
 					tempnumb= len(self.Threads)
 			if tempnumb<self.threads_num:
@@ -163,7 +168,6 @@ class ThreadTool:
 
 			else:
 				threadnownum=self.threads_num
-			
 		sizenumber=min(self.threads_num-threadnownum,sizenum)
 		if self.isThread==1:
 			for i in range(sizenumber):
@@ -210,7 +214,7 @@ class ThreadTool:
 		while True:
 			if self.taskleft()>0:
 				try:
-					req = self.q_request.get(block=True,timeout=10000)
+					req = self.q_request.get(block=True,timeout=60)
 				except:
 					continue
 			else:
@@ -218,6 +222,8 @@ class ThreadTool:
 					req = self.q_request.get(block=True,timeout=5)
 					threadname = multiprocessing.current_process().name
 				except Exception,e:
+
+					threadname = multiprocessing.current_process().name
 					with self.lock:
 						self.alivenum-=1
 					print threadname+'关闭'
@@ -226,21 +232,18 @@ class ThreadTool:
 
 			with self.lock:
 
-				self.running=self.running+1
-
+				self.running += 1
 			threadname=multiprocessing.current_process().name
 
-			print '进程'+threadname+'发起请求: '
 
 			ans=self.do_job(self.job,req,threadname)
 
 			if self.needfinishqueue>0:
 				self.q_finish.put((req,ans))
 			with self.lock:
-				self.running= self.running-1
+				self.running -= 1
 			threadname=multiprocessing.current_process().name
 
-			print '进程'+threadname+'完成请求'
 			self.q_request.task_done()
 
 
@@ -249,12 +252,14 @@ class ThreadTool:
 		while True:
 			if self.taskleft()>0:
 				try:
-					req = self.q_request.get(block=True,timeout=1000)
-				except:
+					req = self.q_request.get(block=True,timeout=60)
+				except Exception,e:
+					print e,'有任务但是取不到'
 					continue
 			else:
 				try:
-					req = self.q_request.get(block=True,timeout=5)
+
+					req = self.q_request.get(block=True,timeout=10)
 					threadname=threading.currentThread().getName()
 				except:
 
@@ -265,12 +270,11 @@ class ThreadTool:
 
 
 			with self.lock:				#要保证该操作的原子性，进入critical area
-				self.running=self.running+1
+				self.running += 1
 
 
 			threadname=threading.currentThread().getName()
 
-			print '线程'+threadname+'发起请求: '
 
 			ans=self.do_job(self.job,req,threadname)
 
@@ -280,14 +284,13 @@ class ThreadTool:
 				self.running-= 1
 			threadname=threading.currentThread().getName()
 
-			print '线程'+threadname+'完成请求'
 			self.q_request.task_done()
 	def getgeventTask(self):
 		import gevent
 		while True:
 			if self.taskleft()>0:
 				try:
-					req = self.q_request.get(block=True,timeout=10000)
+					req = self.q_request.get(block=True,timeout=60)
 				except:
 					continue
 			else:
@@ -298,7 +301,7 @@ class ThreadTool:
 				break
 
 			with self.lock:				#要保证该操作的原子性，进入critical area
-				self.running=self.running+1
+				self.running += 1
 
 
 			threadname=gevent.getcurrent()
@@ -321,7 +324,16 @@ def taskitem(req,threadname):
 
 	time.sleep(3)
 	return threadname,'任务结束'+str(datetime.datetime.now())
-
+class a():
+	def b(self):
+		return 1
+def f(asd,a=2):
+	return a
 if __name__ == "__main__":
-	t=ThreadTool()
-	t.push()
+	# t=ThreadTool()
+	# t.push()
+	t=a()
+	import types
+	t.b=types.MethodType(f, t)
+	f=a()
+	print t.b(3),f.b()

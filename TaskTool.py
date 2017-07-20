@@ -39,10 +39,32 @@ class TaskTool:
 		return self.threadtool.getqueue_size()
 	def get_current_task_num(self):
 		return self.threadtool.get_running_size()
+	def update(self):
+		self.threadtool.add_task(self.task)
+	def join(self):
+		if self.threadtool:
+			self.threadtool.join()
+
+
+
+def add_work(func,data,runtype=1, poolsize=2):
+	tp=TaskTool(isThread=runtype)
+	tp.set_deal_num(poolsize)
+	import types
+	tp.task=types.MethodType(func, tp)
+	tp.update()
+	tp.add_work(data)
+	# tp.join()
+	return tp
+
 if __name__=='__main__':
+	from gevent import monkey
+	monkey.patch_all()
 	import time
 	t=TaskTool(0)
-	t.add_work([1,2,3,4,5])
+	t.set_deal_num(3)
+	for i in xrange(5):
+		t.add_work([i])
 	print 11111111
 	time.sleep(6)
 	t.add_work([6,7,8,9,10])
